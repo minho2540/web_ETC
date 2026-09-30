@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="etc.css"><script src="etc.js"></script><title>ETC · แอดมิน</title></head><body><main>
+<div id="gate" class="card" hidden><h3>🔐 ต้องเข้าสู่ระบบผู้ดูแลก่อน</h3><p id="gm" class="mut"></p><button class="b" onclick="loginBox()">เข้าสู่ระบบ</button></div>
+<div id="panel" hidden>
+<h2>⚙ หน้าแอดมิน</h2>
+<div class="card"><b>ทางลัด</b><br><a class="b" href="index.html">🏠 แอปของฉัน (ซิงก์ข้อมูล)</a><a class="b g" href="library.html">📚 คลังความรู้</a></div>
+<div class="card"><h3>✏️ แก้เนื้อหาหน้าเว็บ</h3><p class="mut">แก้แล้วผู้เข้าชมทุกคนจะเห็นทันที (ผู้เข้าชมแก้ไม่ได้)</p>
+<select id="pg" onchange="loadPage()"></select>
+<textarea id="ed" rows="14" spellcheck="false" style="font-family:monospace;font-size:14px"></textarea>
+<button class="b" onclick="saveP()">💾 บันทึก</button><button class="b g" onclick="loadPage(1)">↺ โหลดต้นฉบับ</button><button class="b d" onclick="resetP()">🗑 คืนค่าเดิม</button><a id="op" class="b g" target="_blank">เปิดดูหน้า</a>
+<p id="st" class="mut"></p><h4>ตัวอย่าง</h4><div id="pv" class="card"></div></div>
+</div>
+<script>
+const pg=()=>document.getElementById('pg'),ed=()=>document.getElementById('ed'),st=t=>{document.getElementById('st').textContent=t};
+async function init(){const g=document.getElementById('gate');
+if(!adm()){g.hidden=false;return}
+let r={};try{r=await apiPost({a:'login'})}catch(e){}
+if(!r.ok){try{sessionStorage.removeItem('etcadmin')}catch(e){}g.hidden=false;document.getElementById('gm').textContent=r.v===2?'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่':'ตรวจสอบไม่ได้ (Apps Script อาจยังเป็นเวอร์ชันเก่า)';return}
+document.getElementById('panel').hidden=false;
+let ov=[];try{ov=(await fetch(API+'?list=1').then(x=>x.json())).pages||[]}catch(e){}
+const lab=Object.fromEntries(PAGES.map(p=>[p[0],p[1]]));
+pg().innerHTML=EDITABLE.map(f=>`<option value="${f}">${lab[f]}${ov.includes(f)?' ✏️ (แก้แล้ว)':''}</option>`).join('');
+const q=new URLSearchParams(location.search).get('p');if(q&&EDITABLE.includes(q))pg().value=q;
+ed().oninput=()=>{document.getElementById('pv').innerHTML=ed().value};
+loadPage()}
+async function loadPage(orig){const f=pg().value;st('กำลังโหลด...');document.getElementById('op').href=f;let h=null;
+if(!orig){try{const d=await fetch(API+'?p='+encodeURIComponent(f)).then(x=>x.json());if(d.v===2)h=d.html}catch(e){}}
+if(h==null){const t=await fetch(f).then(x=>x.text());h=new DOMParser().parseFromString(t,'text/html').querySelector('main').innerHTML}
+ed().value=h.trim();document.getElementById('pv').innerHTML=ed().value;st(orig?'โหลดต้นฉบับแล้ว (ยังไม่ได้บันทึก)':'โหลดแล้ว')}
+async function saveP(){const f=pg().value;st('กำลังบันทึก...');try{const r=await apiPost({a:'saveContent',page:f,html:ed().value});if(r.ok){try{localStorage.setItem('etcc_'+f,ed().value)}catch(e){}st('✅ บันทึกแล้ว เปิดหน้านั้นเพื่อดูผล')}else st('❌ บันทึกไม่สำเร็จ')}catch(e){st('❌ เชื่อมต่อไม่ได้')}}
+async function resetP(){if(!confirm('คืนหน้านี้เป็นเนื้อหาเดิม?'))return;const f=pg().value;const r=await apiPost({a:'saveContent',page:f,html:null});if(r.ok){try{localStorage.removeItem('etcc_'+f)}catch(e){}await loadPage(1);st('✅ คืนค่าเดิมแล้ว')}else st('❌ ไม่สำเร็จ')}
+addEventListener('DOMContentLoaded',init);
+</script></main></body></html>

@@ -2,45 +2,33 @@
 
 เว็บ HTML ไฟล์เดียว ใช้ได้บน iPad / มือถือ / คอม โฮสต์บน GitHub Pages และเก็บข้อมูลซิงก์กับ Google Sheet
 
-## ล็อกอินเริ่มต้น
-- ผู้ใช้: `meen` / รหัสผ่าน: `5340` (สิทธิ์ admin)
-- admin เพิ่ม/ลบผู้ใช้ได้ในเมนู "ผู้ใช้"
-
-> ⚠️ รหัสผ่านอยู่ฝั่ง client (ใครเปิดดูโค้ดก็เห็น) เหมาะกับใช้ส่วนตัวเท่านั้น อย่าเก็บข้อมูลสำคัญมาก
+## การเข้าใช้งาน (v13)
+- **ผู้เยี่ยมชมทุกคน** เข้าได้ทุกหน้า ดู/เล่นได้ ไม่ต้องล็อกอิน แก้เนื้อหาไม่ได้ ข้อมูลในแอป (งาน รายรับ-จ่าย ฯลฯ) เก็บในเครื่องของตัวเอง
+- **แอดมิน** กดปุ่ม "🔐 เข้าสู่ระบบ" มุมซ้ายบน แล้วจะพาไปหน้า `admin.html` (บน GitHub Pages เปิดเป็น `/admin` ก็ได้) แก้เนื้อหาทุกหน้าความรู้ได้ และแอปจะซิงก์ข้อมูลขึ้น Google Sheet
+- ชื่อผู้ใช้/รหัสผ่านแอดมินตั้งใน `code.gs` (ค่าเริ่มต้น `meen` / `5340` **ควรเปลี่ยนรหัสผ่านทันที**) การตรวจรหัสทำที่ฝั่ง Apps Script ไม่ได้อยู่ในหน้าเว็บ
+- เมนูซ้าย ☰ แบ่งกลุ่มหน้าทั้งหมด (บนจอใหญ่/iPad แนวนอนจะเป็นแถบด้านข้างคงที่) แอปหน้าแรกเป็นไทล์กดง่าย ไม่มีแถบเลื่อน จำหน้าที่เปิดค้างไว้ด้วย `#todo` ฯลฯ
 
 ## วิธีขึ้น GitHub Pages
-1. สร้าง repo ใหม่ อัปโหลด `index.html` และ `README.md`
-2. Settings → Pages → Source: `main` / root → Save
-3. เปิดลิงก์ `https://<user>.github.io/<repo>/` บน iPad แล้ว Add to Home Screen
+1. อัปโหลดทุกไฟล์ (ยกเว้น `code.gs`) ไว้ระดับเดียวกันใน repo (ไม่มีโฟลเดอร์)
+2. Settings → Pages → Source: `main` / root
 
-## วิธีเชื่อม Google Sheet
-1. สร้าง Google Sheet ใหม่ → Extensions → Apps Script
-2. วางโค้ดนี้:
-
-```js
-function doGet() {
-  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('db') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('db');
-  return ContentService.createTextOutput(s.getRange('A1').getValue() || '{}').setMimeType(ContentService.MimeType.JSON);
-}
-function doPost(e) {
-  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('db') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('db');
-  s.getRange('A1').setValue(e.postData.contents);
-  return ContentService.createTextOutput('ok');
-}
-```
-3. Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone → คัดลอก URL
-4. เข้าเว็บด้วย admin → เมนู "Google Sheet" → วาง URL → บันทึก
-5. หลังจากนั้นทุกครั้งที่แก้ข้อมูลจะส่งขึ้น Sheet อัตโนมัติ (มีปุ่มส่ง/ดึงด้วยมือ)
+## ตั้งค่า Google Apps Script (ต้องทำครั้งแรก และทุกครั้งที่ `code.gs` เปลี่ยน)
+1. เปิด Google Sheet → Extensions → Apps Script → วางโค้ดจาก `code.gs` ทับของเดิมทั้งหมด → แก้ `ADMIN_PASS`
+2. Deploy → **Manage deployments** → ✏️ → Version: **New version** → Deploy (URL เดิมยังใช้ได้ ไม่ต้องแก้เว็บ)
+3. ถ้ายังใช้สคริปต์เวอร์ชันเก่า หน้า login จะแจ้งว่า "ยังไม่ได้อัปเดตเป็นเวอร์ชัน 2"
+- เนื้อหาที่แอดมินแก้เก็บที่ชีต `content` (หน้าละ 1 แถว) ข้อมูลแอปของแอดมินเก็บที่ชีต `db` เซลล์ A1 (จำกัด ~50,000 ตัวอักษร)
 
 ## โครงสร้างไฟล์ (โฟลเดอร์เดียว ไม่มีโฟลเดอร์ย่อย)
-`index.html` (แอป) · `etc.css` · `etc.js` · `library.html` · หน้าความรู้: `recipes` `thailand` `health` `money` `english` `tech` `history` `space` `science` `travel-world` `garden` `geography` `japanese` `animals` `music` `sports` `art` `korean` `herbs` `festivals` (.html) · เกม/ลับ: `maze` `labyrinth` `secret-riddles` `secret-treasure` `secret-shop` (.html) · `README.md`
-หน้าใหม่: สร้าง .html เพิ่ม แล้วเพิ่มลงรายการ `PAGES` ใน `etc.js`
+`index.html` (แอป) · `admin.html` · `etc.css` · `etc.js` · `library.html` · หน้าความรู้: `recipes` `thailand` `health` `money` `english` `tech` `history` `space` `science` `travel-world` `garden` `geography` `japanese` `animals` `music` `sports` `art` `korean` `herbs` `festivals` (.html) · เกม/ลับ: `maze` `labyrinth` `secret-riddles` `secret-treasure` `secret-shop` (.html) · `README.md` · `code.gs` (อยู่ใน Drive โฟลเดอร์ ETC ใช้วางใน Apps Script เท่านั้น)
+หน้าใหม่: สร้าง .html เพิ่ม แล้วเพิ่มลงรายการ `PAGES` ใน `etc.js` (ระบุกลุ่มเมนูเป็นตัวที่ 3)
 
 ## เมนูในแอป (index.html)
-หน้าแรก · งาน · รายรับ-จ่าย · โน้ต · เครื่องมือ · นิสัย · จับเวลา · ปฏิทิน · สต็อก · ลูกค้า · เป้าหมายออม · ค้นหา · คลังความรู้ · แดชบอร์ด · อารมณ์ · หนัง/หนังสือ · ทายเลข · สุ่มเลือก · บัญชี · ผู้ใช้ (admin) · Google Sheet (admin)
+จัดการชีวิต: งาน · รายรับ-จ่าย · เป้าหมายออม · นิสัย · ปฏิทิน · โน้ต | ธุรกิจ: สต็อก · ลูกค้า · แดชบอร์ด | เครื่องมือ: คำนวณ · จับเวลา · ค้นหา | สนุก: อารมณ์ · หนัง/หนังสือ · ทายเลข · สุ่มเลือก
 
 ## Changelog
-- **v11** หน้าใหม่: 🎨 art, 🇰🇷 korean, 🌿 herbs, 🎉 festivals อัปเดต etc.js และ library.html (เมนูคลังความรู้ในแอปยังไม่แสดง 4 หน้านี้ แต่เข้าได้จาก library.html และแถบเมนู) ย่อ README ให้สั้นลง
+- **v13** ออกแบบ UI ใหม่: เมนูซ้ายแบบลิ้นชัก/แถบข้างจัดกลุ่ม (แก้ปัญหาแถบเมนูเลื่อนกลับไปต้นทางแล้ว) แอปหน้าแรกเป็นไทล์ ปุ่มใหญ่กดง่าย · เข้าเว็บได้โดยไม่ต้องล็อกอิน (ผู้เยี่ยมชมดู/เล่นได้) · ปุ่มเข้าสู่ระบบซ้ายบน → `admin.html` · แอดมินแก้เนื้อหาทุกหน้าความรู้ได้ (เก็บใน Google Sheet) · ตรวจรหัสที่ฝั่ง Apps Script (`code.gs` v2) และไม่เปิดข้อมูลส่วนตัวต่อสาธารณะอีก · ตัดระบบบัญชีผู้ใช้ทั่วไป/เมนูผู้ใช้/เมนูตั้งค่า Sheet/คลังความรู้ในแอป (ใช้เมนูซ้ายแทน)
+- **v12** เมนูรายรับ-จ่าย: เลือกหมวดรายจ่ายได้ (อาหาร เดินทาง ที่พัก ช้อปปิ้ง สุขภาพ บันเทิง อื่นๆ) + กราฟแท่งแยกหมวดในเมนูรายรับ-จ่ายและแดชบอร์ด · เครื่องมือ: แบ่งบิล · เมนู 📚 คลังความรู้ในแอปดึงรายการหน้าจาก `etc.js` อัตโนมัติ (ทำงานบน GitHub Pages) ไม่ต้องแก้ index.html เวลาเพิ่มหน้า · เพิ่มโฟลเดอร์ `ETC/` บน Drive เก็บ README + `code.gs`
+- **v11** หน้าใหม่: 🎨 art, 🇰🇷 korean, 🌿 herbs, 🎉 festivals อัปเดต etc.js และ library.html ย่อ README ให้สั้นลง
 - **v10** japanese, animals, music, sports + แพ็ก etc-site.zip
 - **v9** travel-world, garden, geography + ร้านลับ `secret-shop` (ซื้อสีธีมด้วยเหรียญ)
 - **v8** ระบบเหรียญ 🪙 (ประตูสุ่ม +1, ผ่านด่านเขาวงกต +2, หาทางออก +10, ปริศนา +5), ห้องลับ riddles/treasure, science
@@ -53,4 +41,4 @@ function doPost(e) {
 - **v1** ระบบ login user/admin, งาน, รายรับ-จ่าย, โน้ต, เครื่องมือ, ซิงก์ Google Sheet
 
 ## Backlog (รอบถัดไป)
-รายจ่ายแยกหมวด+กราฟ · แชร์โน้ต · แจ้งเตือนงาน · ประวัติศาสตร์โลก · ร้านเหรียญเพิ่มของ · ปริศนาเพิ่ม · เขาวงกตหลายชั้น · ตารางเวลาเรียน · แปลงสกุลเงิน · บันทึกน้ำหนัก+กราฟ · เกมความจำ · แบ่งบิล · แชร์ลิงก์ · ให้เมนูคลังความรู้ในแอปดึงรายการจาก etc.js
+แชร์โน้ต · แจ้งเตือนงาน · ประวัติศาสตร์โลก · ร้านเหรียญเพิ่มของ · ปริศนาเพิ่ม · เขาวงกตหลายชั้น · ตารางเวลาเรียน · แปลงสกุลเงิน · บันทึกน้ำหนัก+กราฟ · เกมความจำ · แชร์ลิงก์
