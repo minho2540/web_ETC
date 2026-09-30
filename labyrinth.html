@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="etc.css"><script src="etc.js"></script><title>ETC · เขาวงกตเว็บ</title></head><body><main style="text-align:center">
+<h2>🚪 เขาวงกตแห่งข้อมูล</h2><p class="mut">เลือกประตูโดยไม่รู้ว่าอยู่หลังประตู อาจพาไปหน้าความรู้ ทางตัน ห้องลับ หรือทางออก และมีเหรียญ 🪙 ให้เก็บ ใช้ปุ่ม 🚪 ท้ายทุกหน้าเพื่อสุ่มต่อ</p>
+<p><b id="st"></b></p><div id="dr" class="grid"></div><p id="ms" style="font-size:20px"></p>
+<script>
+const CL=['🔴 แดง','🔵 น้ำเงิน','🟢 เขียว','🟡 เหลือง','🟣 ม่วง','🟠 ส้ม'];
+let n=+(sessionStorage.getItem('etcsteps')||0);
+function show(){document.getElementById('st').textContent='ก้าวที่เดินมา: '+n;
+ document.getElementById('dr').innerHTML=CL.slice().sort(()=>Math.random()-.5).slice(0,4).map(c=>'<button class="card" style="font-size:20px" onclick="open_()">🚪 ประตู'+c+'</button>').join('')}
+function open_(){n++;sessionStorage.setItem('etcsteps',n);const r=Math.random(),m=document.getElementById('ms');
+ if(n>=7&&r<.3){addCoin(10);m.innerHTML='🏆 พบทางออก! +10🪙 ใช้ '+n+' ก้าว <a href="library.html">ไปคลังความรู้</a>';sessionStorage.setItem('etcsteps',0);n=0;show();return}
+ if(r<.3){m.textContent='🧱 ทางตัน! ลองเลือกใหม่';show();return}
+ if(r<.4){location.href=['secret-riddles.html','secret-treasure.html','secret-shop.html'][Math.floor(Math.random()*3)];return}
+ const o=PAGES.filter(p=>p[0]!='labyrinth.html');location.href=o[Math.floor(Math.random()*o.length)][0]}
+addEventListener('DOMContentLoaded',show);
+</script></main></body></html>

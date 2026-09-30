@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ETC</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#1c2233;--mut:#6b7386;--pri:#4f46e5;--bd:#e3e7f0;--ok:#16a34a;--no:#dc2626}
+:root[data-theme=dark]{--bg:#0f1220;--card:#181c30;--tx:#e8ebf5;--mut:#8f97b0;--bd:#2a3050}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Sukhumvit Set","Noto Sans Thai",sans-serif;background:var(--bg);color:var(--tx);font-size:16px}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--pri);color:#fff;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:52px;z-index:4}
+nav button{white-space:nowrap;background:none;border:1px solid var(--bd);color:var(--tx);padding:9px 14px;border-radius:20px;font-size:15px}
+nav button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+main{max-width:900px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{text-align:center}.stat b{font-size:28px;display:block;color:var(--pri)}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px;margin:4px 0}
+button.b{background:var(--pri);color:#fff;border:0;padding:11px 18px;border-radius:10px;font-size:16px;margin:4px 4px 4px 0}
+button.d{background:var(--no)}button.g{background:var(--mut)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}.done span{text-decoration:line-through;color:var(--mut)}
+.in{color:var(--ok)}.out{color:var(--no)}small,.mut{color:var(--mut)}
+#login{max-width:340px;margin:12vh auto;padding:0 16px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+const seed={users:[{u:'meen',p:'5340',role:'admin'}],todos:[],exp:[],notes:[],cfg:{url:''}};
+let db;try{db=JSON.parse(localStorage.getItem('meenhub'))||seed}catch(e){db=seed}
+['habits','events','stock','contacts','goals','moods','media'].forEach(k=>db[k]=db[k]||[]);if(!db.cfg.url)db.cfg.url='https://script.google.com/macros/s/AKfycby797aOM1Wn4u9Z9Urn22JjvgK9f9UzBTsjFzFmVd-pE41i4tzxtCPlA08C7PJm2UH8/exec';
+let me=null,tab='home',t;
+try{const s=sessionStorage.getItem('me');if(s)me=db.users.find(x=>x.u==s)}catch(e){}
+function save(){try{localStorage.setItem('meenhub',JSON.stringify(db))}catch(e){}
+ if(db.cfg.url){clearTimeout(t);t=setTimeout(push,1500)}}
+async function push(){try{await fetch(db.cfg.url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(db)});return 1}catch(e){return 0}}
+async function pull(){try{const r=await fetch(db.cfg.url);const d=await r.json();if(d&&d.users){d.cfg=db.cfg;db=d;save();return 1}}catch(e){}return 0}
+const mine=a=>me.role=='admin'?a:a.filter(x=>x.u==me.u);
+const menus=[['home','🏠 หน้าแรก'],['todo','✅ งาน'],['exp','💰 รายรับ-จ่าย'],['notes','📝 โน้ต'],['tools','🧮 เครื่องมือ'],['habit','🔥 นิสัย'],['pomo','⏱ จับเวลา'],['cal','📅 ปฏิทิน'],['stock','📦 สต็อก'],['crm','👤 ลูกค้า'],['goal','🎯 เป้าหมายออม'],['find','🔍 ค้นหา'],['lib','📚 คลังความรู้'],['dash','📊 แดชบอร์ด'],['mood','😊 อารมณ์'],['media','🎬 หนัง/หนังสือ'],['game','🎮 ทายเลข'],['pick','🎲 สุ่มเลือก'],['prof','🔑 บัญชี'],['users','👥 ผู้ใช้','a'],['set','⚙️ Google Sheet','a']];
+function go(x){tab=x;draw()}
+function login(){const u=db.users.find(x=>x.u==$('#lu').value.trim()&&x.p==$('#lp').value);
+ if(!u){$('#err').textContent='ชื่อหรือรหัสผ่านไม่ถูกต้อง';return}
+ me=u;try{sessionStorage.setItem('me',u.u)}catch(e){}draw()}
+function logout(){me=null;try{sessionStorage.removeItem('me')}catch(e){}draw()}
+function draw(){
+ if(!me){$('#app').innerHTML=`<div id="login" class="card"><h2>🔐 ETC</h2><input id="lu" placeholder="ชื่อผู้ใช้" autocapitalize="none"><input id="lp" type="password" placeholder="รหัสผ่าน"><button class="b" onclick="login()">เข้าสู่ระบบ</button><button class="b g" onclick="thm()">🌓</button><p id="err" class="out"></p></div>`;return}
+ const nav=menus.filter(m=>!m[2]||me.role=='admin').map(m=>`<button class="${tab==m[0]?'on':''}" onclick="go('${m[0]}')">${m[1]}</button>`).join('');
+ $('#app').innerHTML=`<header><b>ETC</b><span>${esc(me.u)} (${me.role}) <button class="b g" onclick="thm()">🌓</button><button class="b g" onclick="logout()">ออก</button></span></header><nav>${nav}</nav><main>${V[tab]()}</main>`}
+const V={
+home(){const td=mine(db.todos),ex=mine(db.exp),bal=ex.reduce((s,e)=>s+(e.t=='in'?1:-1)*e.a,0);
+ return `<h2>สวัสดี ${esc(me.u)} 👋</h2><div class="grid"><div class="card stat"><b>${td.filter(x=>!x.d).length}</b>งานค้าง</div><div class="card stat"><b>${bal.toLocaleString()}</b>ยอดคงเหลือ ฿</div><div class="card stat"><b>${mine(db.notes).length}</b>โน้ต</div>${me.role=='admin'?`<div class="card stat"><b>${db.users.length}</b>ผู้ใช้</div>`:''}</div>`},
+todo(){return `<div class="card"><input id="ti" placeholder="เพิ่มงานใหม่..."><button class="b" onclick="addT()">เพิ่ม</button></div><div class="card">${mine(db.todos).map(x=>`<div class="row ${x.d?'done':''}"><span onclick="togT(${x.id})">${x.d?'☑':'☐'} ${esc(x.s)} ${me.role=='admin'?`<small>(${esc(x.u)})</small>`:''}</span><button class="b d" onclick="delT(${x.id})">ลบ</button></div>`).join('')||'<p class="mut">ยังไม่มีงาน</p>'}</div>`},
+exp(){const l=mine(db.exp),i=l.filter(e=>e.t=='in').reduce((s,e)=>s+e.a,0),o=l.filter(e=>e.t=='out').reduce((s,e)=>s+e.a,0);
+ return `<div class="card"><select id="et"><option value="out">รายจ่าย</option><option value="in">รายรับ</option></select><input id="ed" placeholder="รายการ"><select id="ec">${CATS.map(c=>`<option>${c}</option>`).join('')}</select><input id="ea" type="number" inputmode="decimal" placeholder="จำนวนเงิน"><button class="b" onclick="addE()">บันทึก</button></div><div class="grid"><div class="card stat"><b class="in">${i.toLocaleString()}</b>รับ</div><div class="card stat"><b class="out">${o.toLocaleString()}</b>จ่าย</div><div class="card stat"><b>${(i-o).toLocaleString()}</b>คงเหลือ</div></div><div class="card">${l.slice().reverse().map(e=>`<div class="row"><span>${esc(e.s)} <small>${e.dt}</small> ${e.c?`<small>[${esc(e.c)}]</small>`:''}</span><span class="${e.t}">${e.t=='in'?'+':'-'}${e.a.toLocaleString()} <button class="b d" onclick="delE(${e.id})">×</button></span></div>`).join('')||'<p class="mut">ยังไม่มีรายการ</p>'}</div>`},
+notes(){return `<div class="card"><input id="nt" placeholder="หัวข้อ"><textarea id="nb" rows="4" placeholder="เนื้อหา"></textarea><button class="b" onclick="addN()">บันทึกโน้ต</button></div>${mine(db.notes).slice().reverse().map(n=>`<div class="card"><b>${esc(n.t)}</b><p style="white-space:pre-wrap">${esc(n.b)}</p><button class="b d" onclick="delN(${n.id})">ลบ</button></div>`).join('')}`},
+tools(){return `<div class="card"><h3>คำนวณ BMI</h3><input id="bw" type="number" placeholder="น้ำหนัก (กก.)"><input id="bh" type="number" placeholder="ส่วนสูง (ซม.)"><button class="b" onclick="bmi()">คำนวณ</button><p id="bo"></p></div><div class="card"><h3>VAT 7%</h3><input id="vp" type="number" placeholder="ราคา"><button class="b" onclick="vat()">คำนวณ</button><p id="vo"></p></div>`},
+users(){return `<div class="card"><input id="nu" placeholder="ชื่อผู้ใช้" autocapitalize="none"><input id="np" placeholder="รหัสผ่าน"><select id="nr"><option value="user">user</option><option value="admin">admin</option></select><button class="b" onclick="addU()">เพิ่มผู้ใช้</button></div><div class="card">${db.users.map(x=>`<div class="row"><span>${esc(x.u)} <small>${x.role}</small></span>${x.u=='meen'?'':`<button class="b d" onclick="delU('${esc(x.u)}')">ลบ</button>`}</div>`).join('')}</div>`},
+set(){return `<div class="card"><h3>เชื่อม Google Sheet</h3><p class="mut">วาง URL ของ Apps Script Web App (ดูวิธีใน README)</p><input id="su" value="${esc(db.cfg.url)}" placeholder="https://script.google.com/macros/s/.../exec"><button class="b" onclick="setU()">บันทึก URL</button><button class="b g" onclick="doPush()">ส่งขึ้น Sheet</button><button class="b g" onclick="doPull()">ดึงจาก Sheet</button><p id="so"></p></div>`}};
+
+const today=()=>new Date().toISOString().slice(0,10);
+function streak(h){let n=0,d=new Date();if(!h.days.includes(today()))d.setDate(d.getDate()-1);while(h.days.includes(d.toISOString().slice(0,10))){n++;d.setDate(d.getDate()-1)}return n}
+V.habit=()=>`<div class="card"><input id="hi" placeholder="นิสัยที่อยากทำ เช่น ออกกำลังกาย"><button class="b" onclick="addH()">เพิ่ม</button></div><div class="card">${mine(db.habits).map(h=>`<div class="row"><span onclick="togH(${h.id})">${h.days.includes(today())?'✅':'⬜'} ${esc(h.s)}</span><span>🔥 ${streak(h)} วัน <button class="b d" onclick="delH(${h.id})">×</button></span></div>`).join('')||'<p class="mut">ยังไม่มีนิสัย แตะชื่อเพื่อติ๊กวันนี้</p>'}</div>`;
+function addH(){const s=$('#hi').value.trim();if(!s)return;db.habits.push({id:uid(),u:me.u,s,days:[]});save();draw()}
+function togH(i){const h=db.habits.find(a=>a.id==i),d=today();h.days=h.days.includes(d)?h.days.filter(x=>x!=d):h.days.concat(d);save();draw()}
+function delH(i){db.habits=db.habits.filter(a=>a.id!=i);save();draw()}
+let pt=1500,pi=null;
+const fmt=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
+V.pomo=()=>`<div class="card stat"><b id="pt" style="font-size:64px">${fmt(pt)}</b><button class="b" onclick="pStart()">▶ เริ่ม</button><button class="b g" onclick="pStop()">⏸ หยุด</button><button class="b g" onclick="pSet(1500)">25 นาที</button><button class="b g" onclick="pSet(300)">พัก 5</button></div>`;
+function pShow(){const e=$('#pt');if(e)e.textContent=fmt(pt)}
+function pStart(){if(pi)return;pi=setInterval(()=>{pt--;pShow();if(pt<=0){pStop();pt=0;pShow();alert('หมดเวลา! ⏰')}},1000)}
+function pStop(){clearInterval(pi);pi=null}
+function pSet(n){pStop();pt=n;pShow()}
+V.prof=()=>`<div class="card"><h3>เปลี่ยนรหัสผ่าน</h3><input id="op" type="password" placeholder="รหัสเดิม"><input id="np2" type="password" placeholder="รหัสใหม่"><button class="b" onclick="chP()">เปลี่ยน</button></div><div class="card"><h3>ส่งออกข้อมูล</h3><button class="b g" onclick="csv()">⬇ CSV รายรับ-จ่าย</button></div>`;
+function chP(){if($('#op').value!=me.p||!$('#np2').value)return alert('รหัสเดิมไม่ถูกต้องหรือรหัสใหม่ว่าง');me.p=$('#np2').value;save();alert('เปลี่ยนแล้ว ✅')}
+function csv(){const r=[['วันที่','รายการ','ประเภท','จำนวน']].concat(mine(db.exp).map(e=>[e.dt,e.s,e.t=='in'?'รับ':'จ่าย',e.a]));
+ const b=new Blob(['\ufeff'+r.map(x=>x.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='expenses.csv';a.click()}
+const t0=V.tools;
+V.tools=()=>t0()+`<div class="card"><h3>แปลงหน่วย</h3><input id="uv" type="number" placeholder="ค่า"><select id="ut"><option value="2.54">นิ้ว → ซม.</option><option value="0.3937">ซม. → นิ้ว</option><option value="0.4536">ปอนด์ → กก.</option><option value="2.2046">กก. → ปอนด์</option><option value="1.6093">ไมล์ → กม.</option><option value="0.6214">กม. → ไมล์</option></select><button class="b" onclick="unit()">แปลง</button><p id="uo"></p></div>`;
+function unit(){$('#uo').textContent='= '+(+$('#uv').value*$('#ut').value).toFixed(3)}
+
+const fin=n=>Number(n).toLocaleString();
+V.cal=()=>{const t=today();return `<div class="card"><input id="cd" type="date" value="${t}"><input id="cs" placeholder="นัดหมาย / กิจกรรม"><button class="b" onclick="addC()">เพิ่ม</button></div><div class="card">${mine(db.events).slice().sort((a,b)=>a.d<b.d?-1:1).map(e=>`<div class="row" style="${e.d<t?'opacity:.5':''}"><span>${e.d==t?'📍':'📅'} ${e.d} — ${esc(e.s)}</span><button class="b d" onclick="delC(${e.id})">×</button></div>`).join('')||'<p class="mut">ยังไม่มีนัดหมาย</p>'}</div>`};
+function addC(){const s=$('#cs').value.trim();if(!s||!$('#cd').value)return;db.events.push({id:uid(),u:me.u,d:$('#cd').value,s});save();draw()}
+function delC(i){db.events=db.events.filter(a=>a.id!=i);save();draw()}
+V.stock=()=>{const l=mine(db.stock);return `<div class="card"><input id="sn" placeholder="ชื่อสินค้า"><input id="sq" type="number" inputmode="numeric" placeholder="จำนวน"><input id="sp" type="number" inputmode="decimal" placeholder="ราคา/ชิ้น"><button class="b" onclick="addS()">เพิ่มสินค้า</button></div><div class="card"><b>มูลค่าสต็อกรวม: ${fin(l.reduce((a,x)=>a+x.q*x.p,0))} ฿</b></div><div class="card">${l.map(x=>`<div class="row"><span>${esc(x.s)} <small>${fin(x.p)}฿</small> ${x.q<=3?'<span class="out">⚠ ใกล้หมด</span>':''}</span><span><button class="b g" onclick="qS(${x.id},-1)">−</button> <b>${x.q}</b> <button class="b g" onclick="qS(${x.id},1)">+</button> <button class="b d" onclick="delS(${x.id})">×</button></span></div>`).join('')||'<p class="mut">ยังไม่มีสินค้า</p>'}</div>`};
+function addS(){const s=$('#sn').value.trim();if(!s)return;db.stock.push({id:uid(),u:me.u,s,q:parseInt($('#sq').value)||0,p:parseFloat($('#sp').value)||0});save();draw()}
+function qS(i,d){const x=db.stock.find(a=>a.id==i);x.q=Math.max(0,x.q+d);save();draw()}
+function delS(i){db.stock=db.stock.filter(a=>a.id!=i);save();draw()}
+V.crm=()=>`<div class="card"><input id="kn" placeholder="ชื่อลูกค้า/ผู้ติดต่อ"><input id="kp" type="tel" placeholder="เบอร์โทร"><textarea id="kb" rows="2" placeholder="บันทึก"></textarea><button class="b" onclick="addK()">เพิ่ม</button></div>${mine(db.contacts).map(x=>`<div class="card"><b>${esc(x.s)}</b> ${x.ph?`<a href="tel:${esc(x.ph)}">📞 ${esc(x.ph)}</a>`:''}<p class="mut">${esc(x.n)}</p><button class="b d" onclick="delK(${x.id})">ลบ</button></div>`).join('')}`;
+function addK(){const s=$('#kn').value.trim();if(!s)return;db.contacts.push({id:uid(),u:me.u,s,ph:$('#kp').value.trim(),n:$('#kb').value});save();draw()}
+function delK(i){db.contacts=db.contacts.filter(a=>a.id!=i);save();draw()}
+V.goal=()=>`<div class="card"><input id="gn" placeholder="เป้าหมาย เช่น ซื้อ iPad"><input id="gt" type="number" inputmode="decimal" placeholder="เป้าหมายเงิน (฿)"><button class="b" onclick="addG()">เพิ่ม</button></div>${mine(db.goals).map(g=>{const p=Math.min(100,Math.round(g.a/g.t*100));return `<div class="card"><b>${esc(g.s)}</b> <small>${fin(g.a)} / ${fin(g.t)} ฿ (${p}%)</small><div style="background:var(--bd);border-radius:8px;height:12px;margin:8px 0"><div style="width:${p}%;background:var(--ok);height:12px;border-radius:8px"></div></div><button class="b" onclick="depG(${g.id})">+ ออมเพิ่ม</button><button class="b d" onclick="delG(${g.id})">ลบ</button></div>`}).join('')}`;
+function addG(){const s=$('#gn').value.trim(),t=parseFloat($('#gt').value);if(!s||!t)return;db.goals.push({id:uid(),u:me.u,s,t,a:0});save();draw()}
+function depG(i){const v=parseFloat(prompt('ออมเพิ่มกี่บาท?'));if(!v)return;db.goals.find(a=>a.id==i).a+=v;save();draw()}
+function delG(i){db.goals=db.goals.filter(a=>a.id!=i);save();draw()}
+V.find=()=>`<div class="card"><input id="fq" oninput="srch()" placeholder="ค้นหาในงาน โน้ต นัดหมาย ลูกค้า สินค้า..."></div><div class="card" id="fr"><p class="mut">พิมพ์เพื่อค้นหา</p></div>`;
+function srch(){const q=$('#fq').value.trim().toLowerCase();if(!q){$('#fr').innerHTML='<p class="mut">พิมพ์เพื่อค้นหา</p>';return}
+ const src=[['✅ งาน',db.todos,x=>x.s],['📝 โน้ต',db.notes,x=>x.t+' '+x.b],['📅 นัด',db.events,x=>x.d+' '+x.s],['👤 ลูกค้า',db.contacts,x=>x.s+' '+x.ph+' '+x.n],['📦 สินค้า',db.stock,x=>x.s]];
+ const h=src.flatMap(([l,a,f])=>mine(a).filter(x=>f(x).toLowerCase().includes(q)).map(x=>`<div class="row"><span>${l}: ${esc(f(x)).slice(0,80)}</span></div>`)).join('');
+ $('#fr').innerHTML=h||'<p class="mut">ไม่พบผลลัพธ์</p>'}
+
+let th='light';try{th=localStorage.getItem('etcth')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){}
+function applyTh(){document.documentElement.dataset.theme=th}
+function thm(){th=th=='dark'?'light':'dark';try{localStorage.setItem('etcth',th)}catch(e){}applyTh()}
+applyTh();
+const bar=(l,v,m,c)=>`<div style="margin:8px 0"><small>${l} — ${fin(v)}</small><div style="background:var(--bd);border-radius:6px;height:14px"><div style="width:${m?Math.max(2,Math.round(v/m*100)):0}%;background:${c};height:14px;border-radius:6px"></div></div></div>`;
+V.dash=()=>{const ex=mine(db.exp),i=ex.filter(e=>e.t=='in').reduce((a,e)=>a+e.a,0),o=ex.filter(e=>e.t=='out').reduce((a,e)=>a+e.a,0),td=mine(db.todos),dn=td.filter(x=>x.d).length,pe=td.length-dn,hb=mine(db.habits),st=mine(db.stock),mx=Math.max(i,o,1);
+ return `<div class="card"><h3>💰 รับ vs จ่าย</h3>${bar('รายรับ',i,mx,'var(--ok)')}${bar('รายจ่าย',o,mx,'var(--no)')}</div><div class="card"><h3>✅ งาน</h3>${bar('เสร็จ',dn,Math.max(dn,pe,1),'var(--ok)')}${bar('ค้าง',pe,Math.max(dn,pe,1),'var(--pri)')}</div><div class="card"><h3>🔥 Streak นิสัย</h3>${hb.map(h=>bar(esc(h.s),streak(h),Math.max(...hb.map(streak),1),'#f59e0b')).join('')||'<p class="mut">ยังไม่มีข้อมูล</p>'}</div><div class="card"><h3>📦 มูลค่าสต็อก</h3>${st.map(x=>bar(esc(x.s),x.q*x.p,Math.max(...st.map(y=>y.q*y.p),1),'var(--pri)')).join('')||'<p class="mut">ยังไม่มีข้อมูล</p>'}</div>`};
+const MO=['😡','😞','😐','🙂','😄'];
+V.mood=()=>{const l=mine(db.moods),av=l.length?(l.reduce((a,x)=>a+x.v,0)/l.length).toFixed(1):'-';return `<div class="card"><h3>วันนี้รู้สึกยังไง?</h3><input id="mn" placeholder="โน้ตสั้นๆ (ไม่บังคับ)">${MO.map((e,i)=>`<button class="b g" style="font-size:28px" onclick="addM(${i+1})">${e}</button>`).join('')}<p class="mut">คะแนนเฉลี่ย ${av} / 5</p></div><div class="card">${l.slice().reverse().map(x=>`<div class="row"><span>${MO[x.v-1]} ${esc(x.n)} <small>${x.dt}</small></span><button class="b d" onclick="delM(${x.id})">×</button></div>`).join('')||'<p class="mut">ยังไม่มีบันทึก</p>'}</div>`};
+function addM(v){db.moods.push({id:uid(),u:me.u,v,n:$('#mn').value.trim(),dt:new Date().toLocaleDateString('th-TH')});save();draw()}
+function delM(i){db.moods=db.moods.filter(a=>a.id!=i);save();draw()}
+const MS=['อยากดู/อ่าน','กำลังดู/อ่าน','จบแล้ว'];
+V.media=()=>`<div class="card"><input id="mt" placeholder="ชื่อเรื่อง"><select id="mk"><option>🎬 หนัง</option><option>📺 ซีรีส์</option><option>📚 หนังสือ</option><option>🎌 การ์ตูน</option></select><button class="b" onclick="addD()">เพิ่ม</button></div><div class="card">${mine(db.media).map(x=>`<div class="row"><span onclick="cycD(${x.id})">${esc(x.k)} ${esc(x.s)} <small>[${MS[x.st]}]</small></span><span>${x.st==2?`<button class="b g" onclick="rateD(${x.id})">${'⭐'.repeat(x.r)||'ให้คะแนน'}</button>`:''}<button class="b d" onclick="delD(${x.id})">×</button></span></div>`).join('')||'<p class="mut">แตะชื่อเรื่องเพื่อเปลี่ยนสถานะ</p>'}</div>`;
+function addD(){const s=$('#mt').value.trim();if(!s)return;db.media.push({id:uid(),u:me.u,s,k:$('#mk').value,st:0,r:0});save();draw()}
+function cycD(i){const x=db.media.find(a=>a.id==i);x.st=(x.st+1)%3;save();draw()}
+function rateD(i){const v=parseInt(prompt('ให้คะแนน 1-5'));if(v>=1&&v<=5){db.media.find(a=>a.id==i).r=v;save();draw()}}
+function delD(i){db.media=db.media.filter(a=>a.id!=i);save();draw()}
+let G={n:Math.ceil(Math.random()*100),c:0};
+V.game=()=>{let b='-';try{b=localStorage.getItem('etcbest')||'-'}catch(e){}return `<div class="card stat"><h3>ทายเลข 1-100</h3><input id="gg" type="number" inputmode="numeric" placeholder="ใส่เลข"><button class="b" onclick="guess()">ทาย</button><button class="b g" onclick="G={n:Math.ceil(Math.random()*100),c:0};draw()">เริ่มใหม่</button><p id="gm">ทายไปแล้ว ${G.c} ครั้ง</p><small>สถิติดีที่สุด: ${b} ครั้ง</small></div>`};
+function guess(){const v=parseInt($('#gg').value);if(!v)return;G.c++;let m;
+ if(v==G.n){m=`🎉 ถูก! ใช้ ${G.c} ครั้ง`;try{const b=parseInt(localStorage.getItem('etcbest'));if(!b||G.c<b)localStorage.setItem('etcbest',G.c)}catch(e){}G={n:Math.ceil(Math.random()*100),c:0}}
+ else m=v<G.n?'⬆ มากกว่านี้':'⬇ น้อยกว่านี้';
+ $('#gm').textContent=m+(v==G.n?'':` (ครั้งที่ ${G.c})`);$('#gg').value=''}
+V.pick=()=>`<div class="card stat"><h3>สุ่มเลือก</h3><textarea id="po" rows="4" placeholder="พิมพ์ตัวเลือก บรรทัดละ 1 อัน เช่น&#10;กินข้าว&#10;กินก๋วยเตี๋ยว"></textarea><button class="b" onclick="rnd()">🎲 สุ่ม!</button><b id="pr" style="font-size:26px;display:block;margin-top:8px"></b></div>`;
+function rnd(){const a=$('#po').value.split('\n').map(x=>x.trim()).filter(Boolean);$('#pr').textContent=a.length?'👉 '+a[Math.floor(Math.random()*a.length)]:'ใส่ตัวเลือกก่อน'}
+
+const CATS=['อาหาร','เดินทาง','ที่พัก','ช้อปปิ้ง','สุขภาพ','บันเทิง','อื่นๆ'];
+function catBars(){const m={};mine(db.exp).filter(e=>e.t=='out').forEach(e=>{const k=e.c||'อื่นๆ';m[k]=(m[k]||0)+e.a});const mx=Math.max(...Object.values(m),1);
+ return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>bar(esc(k),v,mx,'var(--no)')).join('')||'<p class="mut">ยังไม่มีรายจ่าย</p>'}
+const e0=V.exp;V.exp=()=>e0()+`<div class="card"><h3>🧾 รายจ่ายแยกหมวด</h3>${catBars()}</div>`;
+const d0=V.dash;V.dash=()=>d0()+`<div class="card"><h3>🧾 รายจ่ายแยกหมวด</h3>${catBars()}</div>`;
+const t1=V.tools;V.tools=()=>t1()+`<div class="card"><h3>แบ่งบิล</h3><input id="bt" type="number" inputmode="decimal" placeholder="ยอดรวม (฿)"><input id="bp" type="number" inputmode="numeric" placeholder="จำนวนคน"><input id="bx" type="number" inputmode="decimal" placeholder="ทิป/ค่าบริการ (%) ไม่บังคับ"><button class="b" onclick="bill()">คำนวณ</button><p id="bo2"></p></div>`;
+function bill(){const t=+$('#bt').value,p=Math.max(1,+$('#bp').value||1),x=+$('#bx').value||0,all=t*(1+x/100);$('#bo2').textContent='รวม '+all.toFixed(2)+' ฿ · คนละ '+(all/p).toFixed(2)+' ฿'}
+let LIBP=null;
+fetch('etc.js').then(r=>r.text()).then(t=>{const m=t.match(/const PAGES=(\[.*?\]);/s);if(m){LIBP=Function('return '+m[1])().filter(p=>p[0]!='index.html');if(me&&tab=='lib')draw()}}).catch(()=>{});
+const LIBF=[['library.html','📚 หน้ารวมคลังความรู้']];
+V.lib=()=>`<div class="card"><h3>📚 คลังความรู้ (เปิดได้ไม่ต้องล็อกอิน)</h3>${(LIBP||LIBF).map(x=>`<div class="row"><a href="${x[0]}" style="color:var(--pri)">${x[1]}</a></div>`).join('')}</div>`;
+const uid=()=>Date.now()+Math.floor(Math.random()*999);
+function addT(){const s=$('#ti').value.trim();if(!s)return;db.todos.push({id:uid(),u:me.u,s,d:0});save();draw()}
+function togT(i){const x=db.todos.find(a=>a.id==i);x.d=!x.d;save();draw()}
+function delT(i){db.todos=db.todos.filter(a=>a.id!=i);save();draw()}
+function addE(){const a=parseFloat($('#ea').value),s=$('#ed').value.trim();if(!a||!s)return;db.exp.push({id:uid(),u:me.u,s,a,t:$('#et').value,c:$('#et').value=='in'?'รายรับ':$('#ec').value,dt:new Date().toLocaleDateString('th-TH')});save();draw()}
+function delE(i){db.exp=db.exp.filter(a=>a.id!=i);save();draw()}
+function addN(){const t=$('#nt').value.trim();if(!t)return;db.notes.push({id:uid(),u:me.u,t,b:$('#nb').value});save();draw()}
+function delN(i){db.notes=db.notes.filter(a=>a.id!=i);save();draw()}
+function bmi(){const w=+$('#bw').value,h=+$('#bh').value/100;if(!w||!h)return;const b=w/h/h;$('#bo').textContent='BMI = '+b.toFixed(1)+' ('+(b<18.5?'ผอม':b<23?'ปกติ':b<25?'ท้วม':b<30?'อ้วน':'อ้วนมาก')+')'}
+function vat(){const p=+$('#vp').value;$('#vo').textContent='VAT '+(p*.07).toFixed(2)+' | รวม '+(p*1.07).toFixed(2)+' | ถอด VAT ได้ราคาก่อนภาษี '+(p/1.07).toFixed(2)}
+function addU(){const u=$('#nu').value.trim(),p=$('#np').value;if(!u||!p||db.users.some(x=>x.u==u))return alert('ข้อมูลไม่ถูกต้องหรือมีชื่อนี้แล้ว');db.users.push({u,p,role:$('#nr').value});save();draw()}
+function delU(u){if(confirm('ลบ '+u+'?')){db.users=db.users.filter(x=>x.u!=u);save();draw()}}
+function setU(){db.cfg.url=$('#su').value.trim();save();$('#so').textContent='บันทึกแล้ว'}
+async function doPush(){$('#so').textContent=(await push())?'ส่งสำเร็จ ✅':'ส่งไม่สำเร็จ ❌'}
+async function doPull(){$('#so').textContent=(await pull())?'ดึงสำเร็จ ✅':'ดึงไม่สำเร็จ ❌';if(me)me=db.users.find(x=>x.u==me.u)||null;setTimeout(draw,800)}
+draw();
+if(db.cfg.url)pull().then(ok=>{if(ok){if(me)me=db.users.find(x=>x.u==me.u)||null;draw()}});
+</script>
+</body>
+</html>

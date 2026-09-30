@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="etc.css"><script src="etc.js"></script><title>ETC · เขาวงกต</title></head><body><main style="text-align:center">
+<h2>🌀 เขาวงกต</h2><p class="mut">พาจุดม่วงไปยังจุดเขียวมุมขวาล่าง ผ่านด่านแล้วเขาวงกตจะใหญ่ขึ้น (ปัดบนภาพ ใช้ปุ่ม หรือกดลูกศรบนคีย์บอร์ด)</p>
+<p><b id="i"></b></p><canvas id="c" style="touch-action:none;border-radius:12px"></canvas>
+<div style="max-width:220px;margin:12px auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<span></span><button class="pad" onclick="mv(0,-1)">⬆</button><span></span>
+<button class="pad" onclick="mv(-1,0)">⬅</button><button class="pad" onclick="gen()">🔄</button><button class="pad" onclick="mv(1,0)">➡</button>
+<span></span><button class="pad" onclick="mv(0,1)">⬇</button><span></span></div>
+<style>.pad{padding:14px;font-size:20px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)}</style>
+<script>
+let lv=1,g,S,px,py,mc=0;const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim(),c=document.getElementById('c'),x=c.getContext('2d');
+function gen(){const n=Math.min(3+lv*2,16);S=2*n+1;g=Array.from({length:S},()=>Array(S).fill(1));g[1][1]=0;const st=[[1,1]];
+ while(st.length){const[a,b]=st[st.length-1],d=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-.5).find(([dx,dy])=>{const u=a+dx,v=b+dy;return u>0&&v>0&&u<S-1&&v<S-1&&g[v][u]==1});
+  if(d){g[b+d[1]/2][a+d[0]/2]=0;g[b+d[1]][a+d[0]]=0;st.push([a+d[0],b+d[1]])}else st.pop()}
+ px=py=1;mc=0;draw()}
+function draw(){const W=Math.min(innerWidth-32,480);c.width=c.height=W;const s=W/S;x.fillStyle=cv('--card');x.fillRect(0,0,W,W);x.fillStyle=cv('--tx');
+ for(let j=0;j<S;j++)for(let i=0;i<S;i++)if(g[j][i])x.fillRect(i*s,j*s,s+.5,s+.5);
+ x.fillStyle='#16a34a';x.fillRect((S-2)*s,(S-2)*s,s,s);x.fillStyle=cv('--pri');x.beginPath();x.arc((px+.5)*s,(py+.5)*s,s*.4,0,7);x.fill();
+ document.getElementById('i').textContent='ด่าน '+lv+' · เดิน '+mc+' ก้าว'}
+function mv(dx,dy){if(g[py+dy]&&g[py+dy][px+dx]==0){px+=dx;py+=dy;mc++;if(px==S-2&&py==S-2){addCoin(2);alert('🎉 +2🪙 ผ่านด่าน '+lv+' ด้วย '+mc+' ก้าว!');lv++;gen();return}draw()}}
+addEventListener('keydown',e=>{const k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];if(k){e.preventDefault();mv(...k)}});
+let t0;c.ontouchstart=e=>{t0=e.touches[0]};c.ontouchend=e=>{const t=e.changedTouches[0],dx=t.clientX-t0.clientX,dy=t.clientY-t0.clientY;if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;Math.abs(dx)>Math.abs(dy)?mv(dx>0?1:-1,0):mv(0,dy>0?1:-1)};
+addEventListener('resize',draw);addEventListener('DOMContentLoaded',gen);
+</script></main></body></html>
