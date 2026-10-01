@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="etc.css"><script src="etc.js"></script><title>ETC · เกมความจำ</title></head><body><main>
+<h2>🧠 เกมความจำ</h2><p class="mut">เปิดการ์ดหาคู่ให้ครบ ชนะได้ +3 🪙</p>
+<div class="card text-center"><b id="mv"></b> <button class="b g" onclick="newG()">🔄 เริ่มใหม่</button><div id="bd" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:420px;margin:12px auto 0"></div></div>
+<script>
+const E=['🐶','🐱','🐼','🦊','🐸','🐵','🦁','🐙'];let c,o,m,lock;
+function newG(){c=[...E,...E].sort(()=>Math.random()-.5).map(e=>({e,f:0,d:0}));o=[];m=0;lock=0;draw()}
+function draw(){document.getElementById('bd').innerHTML=c.map((x,i)=>'<button class="card p-0" style="aspect-ratio:1;font-size:34px;margin:0;'+(x.d?'opacity:.45':'')+'" onclick="flip('+i+')">'+(x.f||x.d?x.e:'❓')+'</button>').join('');document.getElementById('mv').textContent='เดิน '+m+' ครั้ง'}
+function flip(i){if(lock||c[i].f||c[i].d)return;c[i].f=1;o.push(i);draw();
+ if(o.length==2){m++;lock=1;const[a,b]=o;
+  if(c[a].e==c[b].e){c[a].d=c[b].d=1;c[a].f=c[b].f=0;o=[];lock=0;draw();if(c.every(x=>x.d)){addCoin(3);document.getElementById('mv').textContent='🎉 ชนะ! เดิน '+m+' ครั้ง (+3 🪙)'}}
+  else setTimeout(()=>{c[a].f=c[b].f=0;o=[];lock=0;draw()},700)}}
+newG();
+</script></main></body></html>

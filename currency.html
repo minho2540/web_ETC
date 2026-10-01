@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="etc.css"><script src="etc.js"></script><title>ETC · แปลงสกุลเงิน</title></head><body><main>
+<h2>💱 แปลงสกุลเงิน</h2><p class="mut">อัตราอ้างอิงจาก open.er-api.com (ต้องออนไลน์) ไม่ใช่อัตราของธนาคาร อัตราจริงที่แลกอาจต่างกัน</p>
+<div class="card"><input id="am" type="number" value="1000" inputmode="decimal"><select id="fr"></select><select id="to"></select>
+<button class="b" onclick="cvt()">แปลง</button><button class="b g" onclick="swp()">⇅ สลับ</button><p id="rs" class="fs-5 fw-bold"></p><small id="up" class="mut">กำลังโหลดอัตรา...</small></div>
+<script>
+const L=[['THB','🇹🇭 บาทไทย'],['USD','🇺🇸 ดอลลาร์สหรัฐ'],['EUR','🇪🇺 ยูโร'],['JPY','🇯🇵 เยนญี่ปุ่น'],['KRW','🇰🇷 วอนเกาหลี'],['GBP','🇬🇧 ปอนด์สเตอร์ลิง'],['CNY','🇨🇳 หยวนจีน'],['SGD','🇸🇬 ดอลลาร์สิงคโปร์'],['AUD','🇦🇺 ดอลลาร์ออสเตรเลีย'],['VND','🇻🇳 ดองเวียดนาม'],['MYR','🇲🇾 ริงกิตมาเลเซีย'],['HKD','🇭🇰 ดอลลาร์ฮ่องกง']];
+let R=null;const fr=document.getElementById('fr'),to=document.getElementById('to');
+fr.innerHTML=to.innerHTML=L.map(x=>'<option value="'+x[0]+'">'+x[1]+' ('+x[0]+')</option>').join('');fr.value='THB';to.value='USD';
+fetch('https://open.er-api.com/v6/latest/THB').then(r=>r.json()).then(d=>{if(d.rates){R=d.rates;document.getElementById('up').textContent='อัปเดตอัตรา: '+(d.time_last_update_utc||'');cvt()}else throw 0}).catch(()=>{document.getElementById('up').textContent='โหลดอัตราไม่ได้ ลองใหม่เมื่อออนไลน์'});
+function cvt(){if(!R)return;const a=+document.getElementById('am').value||0,v=a/R[fr.value]*R[to.value];document.getElementById('rs').textContent=a.toLocaleString()+' '+fr.value+' = '+v.toLocaleString(undefined,{maximumFractionDigits:2})+' '+to.value}
+function swp(){const t=fr.value;fr.value=to.value;to.value=t;cvt()}
+document.getElementById('am').oninput=cvt;fr.onchange=cvt;to.onchange=cvt;
+</script></main></body></html>
